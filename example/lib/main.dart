@@ -12,7 +12,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  MyAppDataModel _myAppDataModel;
+  late MyAppDataModel _myAppDataModel;
 
   @override
   void initState() {
@@ -51,15 +51,14 @@ class _MyAppState extends State<MyApp> {
                     bottom: 24,
                   ),
                   child: snapshot.hasData
-                      ? snapshot.data.isNotEmpty
+                      ? snapshot.data!.isNotEmpty
                           ? ClipRRect(
                               borderRadius: BorderRadius.circular(24),
                               child: Image.file(
-                                File(snapshot.data[0]),
+                                File(snapshot.data![0]),
                                 fit: BoxFit.cover,
                                 width: MediaQuery.of(context).size.width * .75,
-                                height:
-                                    MediaQuery.of(context).size.height * .35,
+                                height: MediaQuery.of(context).size.height * .35,
                               ),
                             )
                           : Center()
@@ -86,13 +85,11 @@ class _MyAppState extends State<MyApp> {
 }
 
 class MyAppDataModel {
-  StreamController<List<String>> _streamController =
-      StreamController<List<String>>.broadcast();
+  StreamController<List<String>> _streamController = StreamController<List<String>>.broadcast();
 
   Sink<List<String>> get inputClickState => _streamController;
 
-  Stream<List<String>> get outputResult =>
-      _streamController.stream.map((data) => data);
+  Stream<List<String>> get outputResult => _streamController.stream.map((data) => data);
 
   dispose() => _streamController.close();
 }

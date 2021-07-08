@@ -1,0 +1,1 @@
+{"info":"This is a generated file; do not edit or check into version control.","plugins":{"ios":[],"android":[{"name":"intent","path":"/Users/fpank/Dev/flutter_android_intent/","dependencies":[]}],"macos":[],"linux":[],"windows":[],"web":[]},"dependencyGraph":[{"name":"intent","dependencies":[]}],"date_created":"2021-05-19 18:27:42.708915","version":"2.0.6"}

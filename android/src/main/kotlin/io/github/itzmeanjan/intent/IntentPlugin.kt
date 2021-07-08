@@ -1,12 +1,20 @@
 package io.github.itzmeanjan.intent
 
 import android.app.Activity
+import android.app.AppOpsManager
+import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.content.pm.PackageManager.NameNotFoundException
 import android.net.Uri
 import android.os.Environment
 import android.provider.ContactsContract
 import android.provider.MediaStore
+import androidx.annotation.NonNull
 import androidx.core.content.FileProvider
+import io.flutter.embedding.engine.plugins.FlutterPlugin
+import io.flutter.embedding.engine.plugins.activity.ActivityAware
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
@@ -15,28 +23,45 @@ import io.flutter.plugin.common.PluginRegistry.Registrar
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.collections.ArrayList
 
-class IntentPlugin(private val registrar: Registrar, private val activity: Activity) : MethodCallHandler {
 
+class IntentPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
+
+    // (private val registrar: Registrar, private val activity: Activity)
+    
     private var activityCompletedCallBack: ActivityCompletedCallBack? = null
     lateinit var toBeCapturedImageLocationURI: Uri
     lateinit var tobeCapturedImageLocationFilePath: File
 
-    companion object {
+    /*companion object {
         @JvmStatic
         fun registerWith(registrar: Registrar) {
             val channel = MethodChannel(registrar.messenger(), "intent")
             channel.setMethodCallHandler(IntentPlugin(registrar, registrar.activity()))
         }
 
+    }*/
+    private lateinit var context: Context
+    private lateinit var activity: Activity
+    private lateinit var channel: MethodChannel
+
+    override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
+        channel = MethodChannel(flutterPluginBinding.getBinaryMessenger(), "intent")
+        channel.setMethodCallHandler(this);
+        context = flutterPluginBinding.applicationContext
     }
 
-    override fun onMethodCall(call: MethodCall, result: Result) {
+    override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+        // TODO: your plugin is no longer attached to a Flutter experience.
+    }
+
+
+    override fun onAttachedToActivity(@NonNull activityPluginBinding: ActivityPluginBinding) {
+        activity = activityPluginBinding.activity
 
         // when an activity will be started for getting some result from it, this callback function will handle it
         // then processes received data and send that back to user
-        registrar.addActivityResultListener { requestCode, resultCode, intent ->
+        activityPluginBinding.addActivityResultListener { requestCode, resultCode, intent ->
             when (requestCode) {
                 999 -> {
                     if (resultCode == Activity.RESULT_OK) {
@@ -76,6 +101,28 @@ class IntentPlugin(private val registrar: Registrar, private val activity: Activ
                 }
             }
         }
+    }
+
+    override fun onDetachedFromActivity() {
+        // TODO: the Activity your plugin was attached to was
+        // destroyed to change configuration.
+        // This call will be followed by onReattachedToActivityForConfigChanges().
+    }
+
+    override fun onDetachedFromActivityForConfigChanges() {
+        // TODO: the Activity your plugin was attached to was
+        // destroyed to change configuration.
+        // This call will be followed by onReattachedToActivityForConfigChanges().
+    }
+
+    override fun onReattachedToActivityForConfigChanges(@NonNull activityPluginBinding: ActivityPluginBinding) {
+        // TODO: your plugin is now attached to a new Activity
+        // after a configuration change.
+    }
+
+    override fun onMethodCall(call: MethodCall, result: Result) {
+
+
 
         when (call.method) {
             // when we're not interested in result of activity started, we call this method via platform channel
@@ -169,6 +216,20 @@ class IntentPlugin(private val registrar: Registrar, private val activity: Activ
                 } catch (e: Exception) {
                     result.error("Error", e.toString(), null)
                 }
+            }
+            "checkPermission" -> {
+
+
+                return try {
+                    val packageManager: PackageManager = context.getPackageManager()
+                    val applicationInfo = packageManager.getApplicationInfo(context.getPackageName(), 0)
+                    val appOpsManager = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+                    val mode = appOpsManager.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, applicationInfo.uid, applicationInfo.packageName)
+                    result.success( mode == AppOpsManager.MODE_ALLOWED )
+                } catch (e: NameNotFoundException) {
+                    result.success( false )
+                }
+
             }
             // but if we're interested in getting data from activity launched, we need to call this method
             //
